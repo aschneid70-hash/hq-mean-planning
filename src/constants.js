@@ -14,6 +14,7 @@ export const MEAL_IDEAS = [
   { name: "Chicken Fajita Bowls", tags: ["gluten-free"], time: 30, description: "Serve over rice for GF — wife gets a veggie version", ingredients: ["chicken breast", "bell peppers", "onion", "rice", "cumin", "lime", "cheese"] },
   { name: "Shakshuka", tags: ["vegetarian", "gluten-free"], time: 25, description: "Eggs poached in spiced tomato sauce — naturally GF", ingredients: ["eggs", "canned tomatoes", "bell peppers", "onion", "garlic", "cumin", "paprika"] },
 ]
+
 export const GROCERY_CATEGORIES = {
   "Produce": ["carrots","broccoli","potatoes","onion","garlic","avocado","zucchini","bell peppers","mushrooms","lemon","lime","green onion","basil"],
   "Dairy & Eggs": ["cheese","sour cream","butter","eggs","mozzarella cheese"],
@@ -23,23 +24,15 @@ export const GROCERY_CATEGORIES = {
   "Spices & Seasonings": ["curry powder","cumin","paprika"],
   "Canned & Packaged": ["canned tomatoes","coconut milk"],
 }
+
 export const CAT_EMOJIS = {
   "Produce":"🥦","Dairy & Eggs":"🥚","Meat & Seafood":"🥩","Pantry & Dry Goods":"🫙",
   "Sauces & Condiments":"🧴","Spices & Seasonings":"🧂","Canned & Packaged":"🥫",
   "Frozen":"🧊","Bakery":"🍞","Deli":"🧀","Beverages":"🥤","Snacks":"🍿","Household":"🧹","Other":"🛒",
 }
-export const DAYS = (() => {
-  const days = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
-  const today = new Date()
-  const mondayOffset = (today.getDay() + 6) % 7
-  return days.map((day, i) => {
-    const date = new Date(today)
-    date.setDate(today.getDate() - mondayOffset + i)
-    return { label: day, date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) }
-  })
-})()
 
 export const MANUAL_CATEGORIES = ["Produce","Dairy & Eggs","Meat & Seafood","Pantry & Dry Goods","Sauces & Condiments","Spices & Seasonings","Canned & Packaged","Other"]
+
 export function categorizeIngredient(ingredient) {
   const ing = ingredient.toLowerCase()
   for (const [cat, items] of Object.entries(GROCERY_CATEGORIES)) {
@@ -47,3 +40,20 @@ export function categorizeIngredient(ingredient) {
   }
   return "Other"
 }
+
+export function getWeekDays(weekOffset = 0) {
+  const days = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
+  const today = new Date()
+  const mondayOffset = (today.getDay() + 6) % 7
+  return days.map((day, i) => {
+    const date = new Date(today)
+    date.setDate(today.getDate() - mondayOffset + i + (weekOffset * 7))
+    return {
+      label: day,
+      date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      key: `${weekOffset === 0 ? 'this' : 'next'}-${day}`
+    }
+  })
+}
+
+export const DAYS = getWeekDays(0)
