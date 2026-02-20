@@ -14,8 +14,26 @@ export default function App() {
   const [gl,setGl]=useState(false)
   const {weekPlan,setWeekPlan,pantryItems,setPantryItems,groceryList,setGroceryList,checkedItems,setCheckedItems,storeRouteInfo,setStoreRouteInfo,grocerySource,setGrocerySource,loading}=useFamilyData(unlocked)
   const unlock=()=>{sessionStorage.setItem(SK,'1');setUnlocked(true)}
-  const buildQ=()=>{const meals=Object.values(weekPlan);if(!meals.length)return;const all={};meals.forEach(meal=>meal.ingredients.forEach(ing=>{const key=ing.toLowerCase();if(!all[key])all[key]={name:ing,sources:[]};all[key].sources.push(meal.name)}));const filtered=Object.values(all).filter(item=>!pantryItems.some(p=>item.name.toLowerCase().includes(p)||p.includes(item.name.toLowerCase())));const cat={};filtered.forEach(item=>{const c=categorizeIngredient(item.name);if(!cat[c])cat[c]=[];cat[c].push(item)});setGroceryList(cat);setCheckedItems({});setStoreRouteInfo(null);setGrocerySource(`${meals.length} meal${meals.length>1?'s':''}: ${meals.map(m=>m.name).join(', ')}`)}
-  const buildA=async()=>{const meals=Object.values(weekPlan);if(!meals.length)return;setGl(true);setGroceryList({});const mn=meals.map(m=>m.name).join(', ');const pn=pantryItems.length?`Family already has: ${pantryItems.join(', ')}. Do NOT include these.`:'';try{const p=await askClaudeJSON(`Grocery list for family of 5 (2 adults, 3 kids 4/2/2) for: ${mn}. ${pn} Keys=category, values=ingredient strings with quantities. Categories: Produce, Dairy & Eggs, Meat & Seafood, Pantry & Dry Goods, Sauces & Condiments, Spices & Seasonings, Canned & Packaged. Only used categories. Deduplicate. ONLY valid JSON.`);const cat={};for(const[c,items] of Object.entries(p))cat[c]=items.map(name=>({name,sources:[]}));setGroceryList(cat);setCheckedItems({});setStoreRouteInfo(null);setGrocerySource(`AI list for ${meals.length} meals: ${mn}`)}catch{buildQ()}setGl(false)}
+  const buildQ=()=>{
+    const meals=Object.values(weekPlan);if(!meals.length)return
+    const all={};meals.forEach(meal=>meal.ingredients.forEach(ing=>{const key=ing.toLowerCase();if(!all[key])all[key]={name:ing,sources:[]};all[key].sources.push(meal.name)}))
+    const filtered=Object.values(all).filter(item=>!pantryItems.some(p=>item.name.toLowerCase().includes(p)||p.includes(item.name.toLowerCase())))
+    const cat={};filtered.forEach(item=>{const c=categorizeIngredient(item.name);if(!cat[c])cat[c]=[];cat[c].push(item)})
+    setGroceryList(cat);setCheckedItems({});setStoreRouteInfo(null)
+    setGrocerySource(`${meals.length} meal${meals.length>1?'s':''}: ${meals.map(m=>m.name).join(', ')}`)
+  }
+  const buildA=async()=>{
+    const meals=Object.values(weekPlan);if(!meals.length)return
+    setGl(true);setGroceryList({})
+    const mn=meals.map(m=>m.name).join(', ')
+    const pn=pantryItems.length?`Family already has: ${pantryItems.join(', ')}. Do NOT include these.`:''
+    try{
+      const p=await askClaudeJSON(`Grocery list for family of 5 (2 adults, 3 kids 4/2/2) for: ${mn}. ${pn} Keys=category, values=ingredient strings with quantities. Categories: Produce, Dairy & Eggs, Meat & Seafood, Pantry & Dry Goods, Sauces & Condiments, Spices & Seasonings, Canned & Packaged. Only used categories. Deduplicate. ONLY valid JSON.`)
+      const cat={};for(const[c,items] of Object.entries(p))cat[c]=items.map(name=>({name,sources:[]}))
+      setGroceryList(cat);setCheckedItems({});setStoreRouteInfo(null)
+      setGrocerySource(`AI list for ${meals.length} meals: ${mn}`)
+    }catch{buildQ()}finally{setGl(false)}
+  }
   if(!unlocked)return <PinScreen onUnlock={unlock}/>
   if(loading)return <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#F5F0EB"}}><div style={{textAlign:"center"}}><div style={{fontSize:40,marginBottom:12}}>🍽</div><div style={{fontSize:13,color:"#74A8A4"}}>Loading your family's data...</div></div></div>
   const ti=Object.values(groceryList).reduce((s,i)=>s+i.length,0)
@@ -42,12 +60,18 @@ export default function App() {
       </div>
       <div style={{height:3,background:"linear-gradient(90deg,#74A8A4,#B6D9E0,#DBE2DC)"}}/>
       <div style={{maxWidth:680,margin:"24px auto 0",padding:"0 16px"}}>
-        {gl&&tab==='grocery'&&<div style={{textAlign:"center",padding:"56px 0"}}><div style={{fontSize:40,marginBottom:14}}>🛒</div><div style={{fontWeight:700,fontSize:16,color:"#335765",marginBottom:6}}>Building your grocery list...</div><div style={{fontSize:13,color:"#74A8A4"}}>AI is calculating quantities for your family of 5</div></div>}
-        {!(gl&&tab==='grocery')&&<>
+        {gl&&tab==='grocery'&&(
+          <div style={{textAlign:"center",padding:"56px 0"}}>
+            <div style={{fontSize:40,marginBottom:14}}>🛒</div>
+            <div style={{fontWeight:700,fontSize:16,color:"#335765",marginBottom:6}}>Building your grocery list...</div>
+            <div style={{fontSize:13,color:"#74A8A4"}}>AI is calculating quantities for your family of 5</div>
+          </div>
+        )}
+        {!gl&&<>
           {tab==='planner'&&<WeekPlanner weekPlan={weekPlan} setWeekPlan={setWeekPlan} pantryItems={pantryItems} onBuildAiList={buildA} onBuildQuickList={buildQ} switchToGrocery={()=>setTab('grocery')}/>}
           {tab==='pantry'&&<PantryTab pantryItems={pantryItems} setPantryItems={setPantryItems}/>}
           {tab==='ideas'&&<MealIdeasTab/>}
-          {tab==='grocery'&&<GroceryList groceryList={groceryList} setGroceryList={setGroceryList} checkedItems={checkedItems} setCheckedItems={setCheckedItems} grocerySource={grocerySource} pantryItems={pantryItems} storeRouteInfo={storeRouteInfo} setStoreRouteInfo={setStoreRouteInfo} onRegenerate={buildA} plannedCount={pc}/>}
+          {tab==='grocery'&&!gl&&<GroceryList groceryList={groceryList} setGroceryList={setGroceryList} checkedItems={checkedItems} setCheckedItems={setCheckedItems} grocerySource={grocerySource} pantryItems={pantryItems} storeRouteInfo={storeRouteInfo} setStoreRouteInfo={setStoreRouteInfo} onRegenerate={buildA} plannedCount={pc}/>}
         </>}
       </div>
     </div>
