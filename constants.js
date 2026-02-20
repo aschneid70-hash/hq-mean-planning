@@ -1,0 +1,111 @@
+// src/components/PinScreen.jsx
+import { useState } from 'react'
+
+const CORRECT_PIN = import.meta.env.VITE_FAMILY_PIN || '1234'
+
+export function PinScreen({ onUnlock }) {
+  const [pin, setPin]     = useState('')
+  const [error, setError] = useState(false)
+  const [shake, setShake] = useState(false)
+
+  const handleDigit = (d) => {
+    if (pin.length >= 4) return
+    const next = pin + d
+    setPin(next)
+    setError(false)
+    if (next.length === 4) {
+      if (next === CORRECT_PIN) {
+        setTimeout(onUnlock, 200)
+      } else {
+        setShake(true); setError(true)
+        setTimeout(() => { setPin(''); setShake(false) }, 600)
+      }
+    }
+  }
+  const handleBack = () => { setPin(p => p.slice(0, -1)); setError(false) }
+  const dots = Array.from({ length: 4 }, (_, i) => i < pin.length)
+
+  return (
+    <div style={{
+      minHeight: "100vh",
+      background: "linear-gradient(160deg, #335765 0%, #2a4855 60%, #1e3540 100%)",
+      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24,
+    }}>
+      {/* Decorative wave shape at top */}
+      <div style={{ position: "fixed", top: 0, left: 0, right: 0, height: 6, background: "#74A8A4", opacity: 0.8 }} />
+      <div style={{ position: "fixed", top: 6, left: 0, right: 0, height: 3, background: "#B6D9E0", opacity: 0.5 }} />
+
+      <div style={{ textAlign: "center", marginBottom: 44 }}>
+        <div style={{ fontSize: 52, marginBottom: 14 }}>🍽</div>
+        <h1 style={{
+          color: "#F5F0EB", fontSize: 28, fontWeight: 800,
+          letterSpacing: "0.5px", marginBottom: 8,
+          textTransform: "uppercase",
+        }}>HQ Meal Planning</h1>
+        <p style={{ color: "#B6D9E0", fontSize: 13, letterSpacing: "1px", textTransform: "uppercase" }}>
+          Enter Family PIN
+        </p>
+      </div>
+
+      {/* PIN dots */}
+      <div style={{ display: "flex", gap: 18, marginBottom: 44, animation: shake ? "shake 0.5s ease" : "none" }}>
+        {dots.map((filled, i) => (
+          <div key={i} style={{
+            width: 16, height: 16, borderRadius: "50%",
+            background: filled ? "#74A8A4" : "transparent",
+            border: `2px solid ${error ? "#c0846a" : "#74A8A4"}`,
+            transition: "all 0.15s",
+            boxShadow: filled ? "0 0 8px rgba(116,168,164,0.6)" : "none",
+          }} />
+        ))}
+      </div>
+
+      {error && (
+        <div style={{ color: "#c0846a", fontSize: 13, marginBottom: 20, marginTop: -32, letterSpacing: "0.5px" }}>
+          Incorrect PIN — try again
+        </div>
+      )}
+
+      {/* Numpad */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, width: 228 }}>
+        {[1,2,3,4,5,6,7,8,9].map(d => (
+          <button key={d} onClick={() => handleDigit(String(d))} style={{
+            height: 62, borderRadius: 14, border: "1.5px solid rgba(182,217,224,0.2)",
+            background: "rgba(182,217,224,0.08)", color: "#F5F0EB",
+            fontSize: 22, fontWeight: 600, cursor: "pointer", transition: "all 0.12s",
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = "rgba(116,168,164,0.25)"; e.currentTarget.style.borderColor = "#74A8A4" }}
+          onMouseLeave={e => { e.currentTarget.style.background = "rgba(182,217,224,0.08)"; e.currentTarget.style.borderColor = "rgba(182,217,224,0.2)" }}
+          >{d}</button>
+        ))}
+        <div />
+        <button onClick={() => handleDigit('0')} style={{
+          height: 62, borderRadius: 14, border: "1.5px solid rgba(182,217,224,0.2)",
+          background: "rgba(182,217,224,0.08)", color: "#F5F0EB",
+          fontSize: 22, fontWeight: 600, cursor: "pointer", transition: "all 0.12s",
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = "rgba(116,168,164,0.25)"; e.currentTarget.style.borderColor = "#74A8A4" }}
+        onMouseLeave={e => { e.currentTarget.style.background = "rgba(182,217,224,0.08)"; e.currentTarget.style.borderColor = "rgba(182,217,224,0.2)" }}
+        >0</button>
+        <button onClick={handleBack} style={{
+          height: 62, borderRadius: 14, border: "1.5px solid transparent",
+          background: "transparent", color: "rgba(182,217,224,0.6)", fontSize: 20, cursor: "pointer",
+        }}>⌫</button>
+      </div>
+
+      <div style={{ marginTop: 40, color: "rgba(182,217,224,0.35)", fontSize: 11, letterSpacing: "1.5px", textTransform: "uppercase" }}>
+        Family access only
+      </div>
+
+      <style>{`
+        @keyframes shake {
+          0%,100% { transform:translateX(0); }
+          20% { transform:translateX(-8px); }
+          40% { transform:translateX(8px); }
+          60% { transform:translateX(-8px); }
+          80% { transform:translateX(8px); }
+        }
+      `}</style>
+    </div>
+  )
+}
