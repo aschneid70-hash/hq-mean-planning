@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { MealCard } from './MealCard'
-import { MEAL_IDEAS, DAYS } from '../constants'
+import { MEAL_IDEAS, {day.label} <span style={{fontSize:12, color:"#74A8A4", marginLeft:4}}>{day.date}</span> } from '../constants'
 import { askClaude } from '../api/claude'
 export function WeekPlanner({ weekPlan, setWeekPlan, pantryItems, onBuildAiList, onBuildQuickList, switchToGrocery }) {
   const [addingTo,setAddingTo]=useState(null);const [aiResult,setAiResult]=useState('');const [aiLoading,setAiLoading]=useState(false)
@@ -16,8 +16,8 @@ export function WeekPlanner({ weekPlan, setWeekPlan, pantryItems, onBuildAiList,
         </div>
       </div>
       {aiResult&&<div style={{background:"#e8f4f4",border:"1.5px solid #B6D9E0",borderRadius:12,padding:"14px 16px",marginBottom:16,fontSize:13.5,color:"#335765",whiteSpace:"pre-wrap",lineHeight:1.7}}><strong style={{display:"block",marginBottom:6,color:"#74A8A4"}}>✨ AI Suggestion:</strong>{aiResult}</div>}
-      {DAYS.map(day=>(
-        <div key={day} style={{background:"white",border:"1.5px solid #C8D8D6",borderRadius:14,padding:"14px 16px",marginBottom:10,boxShadow:"0 1px 4px rgba(51,87,101,0.06)"}}>
+      {{day.label} <span style={{fontSize:12, color:"#74A8A4", marginLeft:4}}>{day.date}</span>.map(day=>(
+        <div key={day.label} <span style={{fontSize:12, color:"#74A8A4", marginLeft:4}}>{day.date}</span> style={{background:"white",border:"1.5px solid #C8D8D6",borderRadius:14,padding:"14px 16px",marginBottom:10,boxShadow:"0 1px 4px rgba(51,87,101,0.06)"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <span style={{fontWeight:700,color:"#335765",fontSize:15}}>{day}</span>
             <button onClick={()=>setAddingTo(addingTo===day?null:day)} style={{background:"#DBE2DC",border:"none",borderRadius:8,padding:"5px 11px",fontSize:12,fontWeight:600,cursor:"pointer",color:"#335765"}}>{addingTo===day?"Close":weekPlan[day]?"Change":"+ Pick Meal"}</button>

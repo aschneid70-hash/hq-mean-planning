@@ -28,7 +28,17 @@ export const CAT_EMOJIS = {
   "Sauces & Condiments":"🧴","Spices & Seasonings":"🧂","Canned & Packaged":"🥫",
   "Frozen":"🧊","Bakery":"🍞","Deli":"🧀","Beverages":"🥤","Snacks":"🍿","Household":"🧹","Other":"🛒",
 }
-export const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
+export const DAYS = (() => {
+  const days = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
+  const today = new Date()
+  const mondayOffset = (today.getDay() + 6) % 7
+  return days.map((day, i) => {
+    const date = new Date(today)
+    date.setDate(today.getDate() - mondayOffset + i)
+    return { label: day, date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) }
+  })
+})()
+
 export const MANUAL_CATEGORIES = ["Produce","Dairy & Eggs","Meat & Seafood","Pantry & Dry Goods","Sauces & Condiments","Spices & Seasonings","Canned & Packaged","Other"]
 export function categorizeIngredient(ingredient) {
   const ing = ingredient.toLowerCase()
