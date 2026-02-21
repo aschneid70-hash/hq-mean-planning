@@ -11,7 +11,7 @@ const SK = 'hq-meal-unlocked'
 export default function App() {
   const [unlocked,setUnlocked]=useState(()=>sessionStorage.getItem(SK)==='1')
   const [tab,setTab]=useState('planner')
-  const [gl,setGl]=useState(false)
+  const [groceryBuilding,setGroceryBuilding]=useState(false)
   const {weekPlan,setWeekPlan,pantryItems,setPantryItems,groceryList,setGroceryList,checkedItems,setCheckedItems,storeRouteInfo,setStoreRouteInfo,grocerySource,setGrocerySource,loading}=useFamilyData(unlocked)
   const unlock=()=>{sessionStorage.setItem(SK,'1');setUnlocked(true)}
   const buildQ=()=>{
@@ -24,7 +24,7 @@ export default function App() {
   }
   const buildA=async()=>{
     const meals=Object.values(weekPlan);if(!meals.length)return
-    setGl(true);setGroceryList({})
+    setGroceryBuilding(true)
     const mn=meals.map(m=>m.name).join(', ')
     const pn=pantryItems.length?`Family already has: ${pantryItems.join(', ')}. Do NOT include these.`:''
     try{
@@ -32,7 +32,7 @@ export default function App() {
       const cat={};for(const[c,items] of Object.entries(p))cat[c]=items.map(name=>({name,sources:[]}))
       setGroceryList(cat);setCheckedItems({});setStoreRouteInfo(null)
       setGrocerySource(`AI list for ${meals.length} meals: ${mn}`)
-    }catch{buildQ()}finally{setGl(false)}
+    }catch{buildQ()}finally{setGroceryBuilding(false)}
   }
   if(!unlocked)return <PinScreen onUnlock={unlock}/>
   if(loading)return <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#F5F0EB"}}><div style={{textAlign:"center"}}><div style={{fontSize:40,marginBottom:12}}>🍽</div><div style={{fontSize:13,color:"#74A8A4"}}>Loading your family's data...</div></div></div>
@@ -60,19 +60,20 @@ export default function App() {
       </div>
       <div style={{height:3,background:"linear-gradient(90deg,#74A8A4,#B6D9E0,#DBE2DC)"}}/>
       <div style={{maxWidth:680,margin:"24px auto 0",padding:"0 16px"}}>
-        {gl&&tab==='grocery'&&(
-          <div style={{textAlign:"center",padding:"56px 0"}}>
-            <div style={{fontSize:40,marginBottom:14}}>🛒</div>
-            <div style={{fontWeight:700,fontSize:16,color:"#335765",marginBottom:6}}>Building your grocery list...</div>
-            <div style={{fontSize:13,color:"#74A8A4"}}>AI is calculating quantities for your family of 5</div>
-          </div>
-        )}
-        {!gl&&<>
-          {tab==='planner'&&<WeekPlanner weekPlan={weekPlan} setWeekPlan={setWeekPlan} pantryItems={pantryItems} onBuildAiList={buildA} onBuildQuickList={buildQ} switchToGrocery={()=>setTab('grocery')}/>}
-          {tab==='pantry'&&<PantryTab pantryItems={pantryItems} setPantryItems={setPantryItems}/>}
-          {tab==='ideas'&&<MealIdeasTab/>}
-          {tab==='grocery'&&!gl&&<GroceryList groceryList={groceryList} setGroceryList={setGroceryList} checkedItems={checkedItems} setCheckedItems={setCheckedItems} grocerySource={grocerySource} pantryItems={pantryItems} storeRouteInfo={storeRouteInfo} setStoreRouteInfo={setStoreRouteInfo} onRegenerate={buildA} plannedCount={pc}/>}
-        </>}
+        <div style={{display:tab==='planner'?'block':'none'}}><WeekPlanner weekPlan={weekPlan} setWeekPlan={setWeekPlan} pantryItems={pantryItems} onBuildAiList={buildA} onBuildQuickList={buildQ} switchToGrocery={()=>setTab('grocery')}/></div>
+        <div style={{display:tab==='pantry'?'block':'none'}}><PantryTab pantryItems={pantryItems} setPantryItems={setPantryItems}/></div>
+        <div style={{display:tab==='ideas'?'block':'none'}}><MealIdeasTab/></div>
+        <div style={{display:tab==='grocery'?'block':'none'}}>
+          {groceryBuilding?(
+            <div style={{textAlign:"center",padding:"56px 0"}}>
+              <div style={{fontSize:40,marginBottom:14}}>🛒</div>
+              <div style={{fontWeight:700,fontSize:16,color:"#335765",marginBottom:6}}>Building your grocery list...</div>
+              <div style={{fontSize:13,color:"#74A8A4"}}>AI is calculating quantities for your family of 5</div>
+            </div>
+          ):(
+            <GroceryList groceryList={groceryList} setGroceryList={setGroceryList} checkedItems={checkedItems} setCheckedItems={setCheckedItems} grocerySource={grocerySource} pantryItems={pantryItems} storeRouteInfo={storeRouteInfo} setStoreRouteInfo={setStoreRouteInfo} onRegenerate={buildA} plannedCount={pc}/>
+          )}
+        </div>
       </div>
     </div>
   )
