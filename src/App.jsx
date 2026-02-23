@@ -42,11 +42,9 @@ export default function App() {
   const ts=(t)=>({padding:"8px 15px",border:"none",borderRadius:99,background:tab===t?"#EDEDCE":"transparent",color:tab===t?"#0C2C55":"rgba(237,237,206,0.75)",fontWeight:tab===t?700:500,fontSize:13,cursor:"pointer",transition:"all 0.15s",whiteSpace:"nowrap"})
   return (
     <div style={{fontFamily:"'Georgia',serif",minHeight:"100vh",background:"#EDEDCE",paddingBottom:56}}>
-      {/* Shit Show HQ link */}
       <div style={{background:"#0a2244",textAlign:"center",padding:"6px 0"}}>
         <a href="https://familyhq.vercel.app/" style={{color:"#629FAD",fontSize:12,fontWeight:600,textDecoration:"none",letterSpacing:"0.5px"}} onMouseEnter={e=>e.target.style.color="#EDEDCE"} onMouseLeave={e=>e.target.style.color="#629FAD"}>← Shit Show HQ</a>
       </div>
-      {/* Header */}
       <div style={{background:"linear-gradient(135deg,#0C2C55 0%,#1a3f6e 100%)",padding:"20px 24px 18px",color:"white",boxShadow:"0 2px 12px rgba(12,44,85,0.4)"}}>
         <div style={{maxWidth:680,margin:"0 auto"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
@@ -69,15 +67,21 @@ export default function App() {
         <div style={{display:tab==='pantry'?'block':'none'}}><PantryTab pantryItems={pantryItems} setPantryItems={setPantryItems}/></div>
         <div style={{display:tab==='ideas'?'block':'none'}}><MealIdeasTab/></div>
         <div style={{display:tab==='grocery'?'block':'none'}}>
-          {groceryBuilding?(
-            <div style={{textAlign:"center",padding:"56px 0"}}>
-              <div style={{fontSize:40,marginBottom:14}}>🛒</div>
-              <div style={{fontWeight:700,fontSize:16,color:"#0C2C55",marginBottom:6}}>Building your grocery list...</div>
-              <div style={{fontSize:13,color:"#629FAD"}}>AI is calculating quantities for your family of 5</div>
-            </div>
-          ):(
-            <GroceryList groceryList={groceryList} setGroceryList={setGroceryList} checkedItems={checkedItems} setCheckedItems={setCheckedItems} grocerySource={grocerySource} pantryItems={pantryItems} storeRouteInfo={storeRouteInfo} setStoreRouteInfo={setStoreRouteInfo} onRegenerate={buildA} plannedCount={pc}/>
-          )}
+          <GroceryList
+            groceryList={groceryList}
+            setGroceryList={setGroceryList}
+            checkedItems={checkedItems}
+            setCheckedItems={setCheckedItems}
+            grocerySource={grocerySource}
+            pantryItems={pantryItems}
+            storeRouteInfo={storeRouteInfo}
+            setStoreRouteInfo={setStoreRouteInfo}
+            onRegenerate={buildA}
+            onBuildAiList={buildA}
+            onBuildQuickList={buildQ}
+            plannedCount={pc}
+            groceryBuilding={groceryBuilding}
+          />
         </div>
       </div>
     </div>
