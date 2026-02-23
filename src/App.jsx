@@ -43,13 +43,13 @@ export default function App() {
   return (
     <div style={{fontFamily:"'Georgia',serif",minHeight:"100vh",background:"#EDEDCE",paddingBottom:56}}>
       <div style={{background:"#0a2244",textAlign:"center",padding:"6px 0"}}>
-        <a href="https://familyhq.vercel.app/" style={{color:"#629FAD",fontSize:12,fontWeight:600,textDecoration:"none",letterSpacing:"0.5px"}} onMouseEnter={e=>e.target.style.color="#EDEDCE"} onMouseLeave={e=>e.target.style.color="#629FAD"}>← Shit Show HQ</a>
+        <a href="https://family.vercel.app/" style={{color:"#629FAD",fontSize:12,fontWeight:600,textDecoration:"none",letterSpacing:"0.5px"}} onMouseEnter={e=>e.target.style.color="#EDEDCE"} onMouseLeave={e=>e.target.style.color="#629FAD"}>← Shit Show HQ</a>
       </div>
       <div style={{background:"linear-gradient(135deg,#0C2C55 0%,#1a3f6e 100%)",padding:"20px 24px 18px",color:"white",boxShadow:"0 2px 12px rgba(12,44,85,0.4)"}}>
         <div style={{maxWidth:680,margin:"0 auto"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
             <div>
-              <div style={{fontSize:21,fontWeight:800,letterSpacing:"0.5px",color:"#EDEDCE",textTransform:"uppercase"}}>🍽 HQ Meal Planning</div>
+              <div style={{fontSize:21,fontWeight:800,letterSpacing:"0.5px",color:"#EDEDCE",textTransform:"uppercase"}}>MealOps HQ</div>
               <div style={{fontSize:11.5,color:"#629FAD",marginTop:4,letterSpacing:"0.5px"}}>5 people · Wife: vegetarian 🌱 · You & oldest: celiac 🌾</div>
             </div>
             <button onClick={()=>{sessionStorage.removeItem(SK);setUnlocked(false)}} style={{background:"rgba(98,159,173,0.15)",color:"#629FAD",border:"1px solid rgba(98,159,173,0.25)",borderRadius:8,padding:"6px 12px",fontSize:12,cursor:"pointer"}}>🔒 Lock</button>
