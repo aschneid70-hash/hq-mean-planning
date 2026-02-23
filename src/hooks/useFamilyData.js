@@ -14,32 +14,34 @@ export function useFamilyData(unlocked) {
   const [storeRouteInfo, setStoreRouteInfoLocal] = useState(null)
   const [grocerySource, setGrocerySourceLocal] = useState('')
   const [loading, setLoading] = useState(true)
+  const isSaving = useRef(false)
   const docRef = doc(db, COLLECTION, FAMILY_DOC_ID)
   const save = (patch) => {
-    console.log('Saving to Firestore:', patch)
-    return setDoc(docRef, patch, { merge: true }).catch(e => console.error('Firestore save error:', e))
+    isSaving.current = true
+    return setDoc(docRef, patch, { merge: true })
+      .catch(console.error)
+      .finally(() => { setTimeout(() => { isSaving.current = false }, 1000) })
   }
   const debouncedSave = useDebounce(save, 600)
   useEffect(() => {
     if (!unlocked) { setLoading(false); return }
-    console.log('Starting Firestore listener...')
     const unsub = onSnapshot(docRef, (snap) => {
-      console.log('Firestore snapshot received, exists:', snap.exists())
-      if (snap.exists()) {
-        const d = snap.data()
-        console.log('Data from Firestore:', d)
-        setWeekPlanLocal(d.weekPlan || {})
-        setPantryItemsLocal(d.pantryItems || [])
-        setGroceryListLocal(d.groceryList || {})
-        setCheckedItemsLocal(d.checkedItems || {})
-        setStoreRouteInfoLocal(d.storeRouteInfo || null)
-        setGrocerySourceLocal(d.grocerySource || '')
+      if (!isSaving.current) {
+        if (snap.exists()) {
+          const d = snap.data()
+          setWeekPlanLocal(d.weekPlan || {})
+          setPantryItemsLocal(d.pantryItems || [])
+          setGroceryListLocal(d.groceryList || {})
+          setCheckedItemsLocal(d.checkedItems || {})
+          setStoreRouteInfoLocal(d.storeRouteInfo || null)
+          setGrocerySourceLocal(d.grocerySource || '')
+        }
       }
       setLoading(false)
-    }, (err) => { console.error('Firestore listener error:', err); setLoading(false) })
+    }, (err) => { console.error('Firestore error', err); setLoading(false) })
     return () => unsub()
   }, [unlocked])
-  const setWeekPlan = (u) => { setWeekPlanLocal(prev => { const next = typeof u === 'function' ? u(prev) : u; console.log('setWeekPlan called, saving:', next); debouncedSave({ weekPlan: next }); return next }) }
+  const setWeekPlan = (u) => { setWeekPlanLocal(prev => { const next = typeof u === 'function' ? u(prev) : u; debouncedSave({ weekPlan: next }); return next }) }
   const setPantryItems = (v) => { setPantryItemsLocal(v); debouncedSave({ pantryItems: v }) }
   const setGroceryList = (v) => { setGroceryListLocal(v); debouncedSave({ groceryList: v }) }
   const setCheckedItems = (v) => { setCheckedItemsLocal(v); debouncedSave({ checkedItems: v }) }
