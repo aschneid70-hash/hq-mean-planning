@@ -49,7 +49,7 @@ export default function App() {
         <div style={{maxWidth:680,margin:"0 auto"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
             <div>
-              <div style={{fontSize:21,fontWeight:800,letterSpacing:"0.5px",color:"#EDEDCE",textTransform:"uppercase"}}>MealOps HQ</div>
+              <div style={{fontSize:21,fontWeight:800,letterSpacing:"0.5px",color:"#EDEDCE",textTransform:"uppercase"}}>Chaos Kitchen HQ</div>
               <div style={{fontSize:11.5,color:"#629FAD",marginTop:4,letterSpacing:"0.5px"}}>5 people · Wife: vegetarian 🌱 · You & oldest: celiac 🌾</div>
             </div>
             <button onClick={()=>{sessionStorage.removeItem(SK);setUnlocked(false)}} style={{background:"rgba(98,159,173,0.15)",color:"#629FAD",border:"1px solid rgba(98,159,173,0.25)",borderRadius:8,padding:"6px 12px",fontSize:12,cursor:"pointer"}}>🔒 Lock</button>
