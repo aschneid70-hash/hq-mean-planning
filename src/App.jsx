@@ -35,30 +35,35 @@ export default function App() {
     }catch{buildQ()}finally{setGroceryBuilding(false)}
   }
   if(!unlocked)return <PinScreen onUnlock={unlock}/>
-  if(loading)return <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#F5F0EB"}}><div style={{textAlign:"center"}}><div style={{fontSize:40,marginBottom:12}}>🍽</div><div style={{fontSize:13,color:"#74A8A4"}}>Loading your family's data...</div></div></div>
+  if(loading)return <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#EDEDCE"}}><div style={{textAlign:"center"}}><div style={{fontSize:40,marginBottom:12}}>🍽</div><div style={{fontSize:13,color:"#629FAD"}}>Loading your family's data...</div></div></div>
   const ti=Object.values(groceryList).reduce((s,i)=>s+i.length,0)
   const cc=Object.keys(checkedItems).filter(k=>checkedItems[k]).length
   const pc=Object.keys(weekPlan).length
-  const ts=(t)=>({padding:"8px 15px",border:"none",borderRadius:99,background:tab===t?"#F5F0EB":"transparent",color:tab===t?"#335765":"rgba(245,240,235,0.75)",fontWeight:tab===t?700:500,fontSize:13,cursor:"pointer",transition:"all 0.15s",whiteSpace:"nowrap"})
+  const ts=(t)=>({padding:"8px 15px",border:"none",borderRadius:99,background:tab===t?"#EDEDCE":"transparent",color:tab===t?"#0C2C55":"rgba(237,237,206,0.75)",fontWeight:tab===t?700:500,fontSize:13,cursor:"pointer",transition:"all 0.15s",whiteSpace:"nowrap"})
   return (
-    <div style={{fontFamily:"'Georgia',serif",minHeight:"100vh",background:"#F5F0EB",paddingBottom:56}}>
-      <div style={{background:"linear-gradient(135deg,#335765 0%,#2d4f5c 100%)",padding:"20px 24px 18px",color:"white",boxShadow:"0 2px 12px rgba(51,87,101,0.3)"}}>
+    <div style={{fontFamily:"'Georgia',serif",minHeight:"100vh",background:"#EDEDCE",paddingBottom:56}}>
+      {/* Shit Show HQ link */}
+      <div style={{background:"#0a2244",textAlign:"center",padding:"6px 0"}}>
+        <a href="https://familyhq.vercel.app/" style={{color:"#629FAD",fontSize:12,fontWeight:600,textDecoration:"none",letterSpacing:"0.5px"}} onMouseEnter={e=>e.target.style.color="#EDEDCE"} onMouseLeave={e=>e.target.style.color="#629FAD"}>← Shit Show HQ</a>
+      </div>
+      {/* Header */}
+      <div style={{background:"linear-gradient(135deg,#0C2C55 0%,#1a3f6e 100%)",padding:"20px 24px 18px",color:"white",boxShadow:"0 2px 12px rgba(12,44,85,0.4)"}}>
         <div style={{maxWidth:680,margin:"0 auto"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
             <div>
-              <div style={{fontSize:21,fontWeight:800,letterSpacing:"0.5px",color:"#F5F0EB",textTransform:"uppercase"}}>🍽 HQ Meal Planning</div>
-              <div style={{fontSize:11.5,color:"#B6D9E0",marginTop:4,letterSpacing:"0.5px"}}>5 people · Wife: vegetarian 🌱 · You & oldest: celiac 🌾</div>
+              <div style={{fontSize:21,fontWeight:800,letterSpacing:"0.5px",color:"#EDEDCE",textTransform:"uppercase"}}>🍽 HQ Meal Planning</div>
+              <div style={{fontSize:11.5,color:"#629FAD",marginTop:4,letterSpacing:"0.5px"}}>5 people · Wife: vegetarian 🌱 · You & oldest: celiac 🌾</div>
             </div>
-            <button onClick={()=>{sessionStorage.removeItem(SK);setUnlocked(false)}} style={{background:"rgba(182,217,224,0.15)",color:"#B6D9E0",border:"1px solid rgba(182,217,224,0.25)",borderRadius:8,padding:"6px 12px",fontSize:12,cursor:"pointer"}}>🔒 Lock</button>
+            <button onClick={()=>{sessionStorage.removeItem(SK);setUnlocked(false)}} style={{background:"rgba(98,159,173,0.15)",color:"#629FAD",border:"1px solid rgba(98,159,173,0.25)",borderRadius:8,padding:"6px 12px",fontSize:12,cursor:"pointer"}}>🔒 Lock</button>
           </div>
-          <div style={{display:"flex",gap:2,background:"rgba(51,87,101,0.5)",borderRadius:99,padding:3,overflowX:"auto",width:"fit-content",maxWidth:"100%",border:"1px solid rgba(182,217,224,0.2)"}}>
+          <div style={{display:"flex",gap:2,background:"rgba(12,44,85,0.5)",borderRadius:99,padding:3,overflowX:"auto",width:"fit-content",maxWidth:"100%",border:"1px solid rgba(98,159,173,0.2)"}}>
             {[["planner","📅 Week"],["pantry","🧺 Pantry"],["ideas","💡 Ideas"],["grocery",`🛒 Grocery${ti>0?` (${cc}/${ti})`:''}`]].map(([key,label])=>(
               <button key={key} onClick={()=>setTab(key)} style={ts(key)}>{label}</button>
             ))}
           </div>
         </div>
       </div>
-      <div style={{height:3,background:"linear-gradient(90deg,#74A8A4,#B6D9E0,#DBE2DC)"}}/>
+      <div style={{height:3,background:"linear-gradient(90deg,#296374,#629FAD,#EDEDCE)"}}/>
       <div style={{maxWidth:680,margin:"24px auto 0",padding:"0 16px"}}>
         <div style={{display:tab==='planner'?'block':'none'}}><WeekPlanner weekPlan={weekPlan} setWeekPlan={setWeekPlan} pantryItems={pantryItems} onBuildAiList={buildA} onBuildQuickList={buildQ} switchToGrocery={()=>setTab('grocery')}/></div>
         <div style={{display:tab==='pantry'?'block':'none'}}><PantryTab pantryItems={pantryItems} setPantryItems={setPantryItems}/></div>
@@ -67,8 +72,8 @@ export default function App() {
           {groceryBuilding?(
             <div style={{textAlign:"center",padding:"56px 0"}}>
               <div style={{fontSize:40,marginBottom:14}}>🛒</div>
-              <div style={{fontWeight:700,fontSize:16,color:"#335765",marginBottom:6}}>Building your grocery list...</div>
-              <div style={{fontSize:13,color:"#74A8A4"}}>AI is calculating quantities for your family of 5</div>
+              <div style={{fontWeight:700,fontSize:16,color:"#0C2C55",marginBottom:6}}>Building your grocery list...</div>
+              <div style={{fontSize:13,color:"#629FAD"}}>AI is calculating quantities for your family of 5</div>
             </div>
           ):(
             <GroceryList groceryList={groceryList} setGroceryList={setGroceryList} checkedItems={checkedItems} setCheckedItems={setCheckedItems} grocerySource={grocerySource} pantryItems={pantryItems} storeRouteInfo={storeRouteInfo} setStoreRouteInfo={setStoreRouteInfo} onRegenerate={buildA} plannedCount={pc}/>

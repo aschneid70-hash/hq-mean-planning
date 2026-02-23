@@ -1,5 +1,12 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{font-size:16px;-webkit-font-smoothing:antialiased}
-:root{--deep-teal:#335765;--sage-teal:#74A8A4;--light-blue:#B6D9E0;--pale-mint:#DBE2DC;--warm-brown:#7F543D;--off-white:#F5F0EB;--border:#C8D8D6}
-body{font-family:'Georgia',serif;background:var(--off-white);min-height:100vh}
+:root{
+  --navy:#0C2C55;
+  --teal:#296374;
+  --mid-teal:#629FAD;
+  --cream:#EDEDCE;
+  --border:#a8c4cc;
+  --warm-brown:#7F543D;
+}
+body{font-family:'Georgia',serif;background:var(--cream);min-height:100vh}
 button,input,textarea,select{font-family:inherit}
