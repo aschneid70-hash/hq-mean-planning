@@ -7,66 +7,152 @@ import { MealIdeasTab } from './components/MealIdeasTab'
 import { GroceryList } from './components/GroceryList'
 import { categorizeIngredient } from './constants'
 import { askClaudeJSON } from './api/claude'
+
 const SK = 'hq-meal-unlocked'
+
 export default function App() {
-  const [unlocked,setUnlocked]=useState(()=>sessionStorage.getItem(SK)==='1')
-  const [tab,setTab]=useState('planner')
-  const [groceryBuilding,setGroceryBuilding]=useState(false)
-  const {weekPlan,setWeekPlan,pantryItems,setPantryItems,groceryList,setGroceryList,checkedItems,setCheckedItems,storeRouteInfo,setStoreRouteInfo,grocerySource,setGrocerySource,loading}=useFamilyData(unlocked)
-  const unlock=()=>{sessionStorage.setItem(SK,'1');setUnlocked(true)}
-  const buildQ=()=>{
-    const meals=Object.values(weekPlan);if(!meals.length)return
-    const all={};meals.forEach(meal=>meal.ingredients.forEach(ing=>{const key=ing.toLowerCase();if(!all[key])all[key]={name:ing,sources:[]};all[key].sources.push(meal.name)}))
-    const filtered=Object.values(all).filter(item=>!pantryItems.some(p=>item.name.toLowerCase().includes(p)||p.includes(item.name.toLowerCase())))
-    const cat={};filtered.forEach(item=>{const c=categorizeIngredient(item.name);if(!cat[c])cat[c]=[];cat[c].push(item)})
-    setGroceryList(cat);setCheckedItems({});setStoreRouteInfo(null)
-    setGrocerySource(`${meals.length} meal${meals.length>1?'s':''}: ${meals.map(m=>m.name).join(', ')}`)
+  const [unlocked, setUnlocked] = useState(() => sessionStorage.getItem(SK) === '1')
+  const [tab, setTab] = useState('planner')
+  const [groceryBuilding, setGroceryBuilding] = useState(false)
+
+  const {
+    weekPlan, setWeekPlan,
+    pantryItems, setPantryItems,
+    groceryList, setGroceryList,
+    checkedItems, setCheckedItems,
+    storeRouteInfo, setStoreRouteInfo,
+    grocerySource, setGrocerySource,
+    customMeals,
+    loading
+  } = useFamilyData(unlocked)
+
+  const unlock = () => { sessionStorage.setItem(SK, '1'); setUnlocked(true) }
+
+  const buildQ = () => {
+    const meals = Object.values(weekPlan)
+    if (!meals.length) return
+    const all = {}
+    meals.forEach(meal => meal.ingredients.forEach(ing => {
+      const key = ing.toLowerCase()
+      if (!all[key]) all[key] = { name: ing, sources: [] }
+      all[key].sources.push(meal.name)
+    }))
+    const filtered = Object.values(all).filter(item =>
+      !pantryItems.some(p => item.name.toLowerCase().includes(p) || p.includes(item.name.toLowerCase()))
+    )
+    const cat = {}
+    filtered.forEach(item => {
+      const c = categorizeIngredient(item.name)
+      if (!cat[c]) cat[c] = []
+      cat[c].push(item)
+    })
+    setGroceryList(cat)
+    setCheckedItems({})
+    setStoreRouteInfo(null)
+    setGrocerySource(`${meals.length} meal${meals.length > 1 ? 's' : ''}: ${meals.map(m => m.name).join(', ')}`)
   }
-  const buildA=async()=>{
-    const meals=Object.values(weekPlan);if(!meals.length)return
+
+  const buildA = async () => {
+    const meals = Object.values(weekPlan)
+    if (!meals.length) return
     setGroceryBuilding(true)
-    const mn=meals.map(m=>m.name).join(', ')
-    const pn=pantryItems.length?`Family already has: ${pantryItems.join(', ')}. Do NOT include these.`:''
-    try{
-      const p=await askClaudeJSON(`Grocery list for family of 5 (2 adults, 3 kids 4/2/2) for: ${mn}. ${pn} Keys=category, values=ingredient strings with quantities. Categories: Produce, Dairy & Eggs, Meat & Seafood, Pantry & Dry Goods, Sauces & Condiments, Spices & Seasonings, Canned & Packaged. Only used categories. Deduplicate. ONLY valid JSON.`)
-      const cat={};for(const[c,items] of Object.entries(p))cat[c]=items.map(name=>({name,sources:[]}))
-      setGroceryList(cat);setCheckedItems({});setStoreRouteInfo(null)
+    const mn = meals.map(m => m.name).join(', ')
+    const pn = pantryItems.length ? `Family already has: ${pantryItems.join(', ')}. Do NOT include these.` : ''
+    try {
+      const p = await askClaudeJSON(
+        `Grocery list for family of 5 (2 adults, 3 kids 4/2/2) for: ${mn}. ${pn} Keys=category, values=ingredient strings with quantities. Categories: Produce, Dairy & Eggs, Meat & Seafood, Pantry & Dry Goods, Sauces & Condiments, Spices & Seasonings, Canned & Packaged. Only used categories. Deduplicate. ONLY valid JSON.`
+      )
+      const cat = {}
+      for (const [c, items] of Object.entries(p)) cat[c] = items.map(name => ({ name, sources: [] }))
+      setGroceryList(cat)
+      setCheckedItems({})
+      setStoreRouteInfo(null)
       setGrocerySource(`AI list for ${meals.length} meals: ${mn}`)
-    }catch{buildQ()}finally{setGroceryBuilding(false)}
+    } catch {
+      buildQ()
+    } finally {
+      setGroceryBuilding(false)
+    }
   }
-  if(!unlocked)return <PinScreen onUnlock={unlock}/>
-  if(loading)return <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#EDEDCE"}}><div style={{textAlign:"center"}}><div style={{fontSize:40,marginBottom:12}}>🍽</div><div style={{fontSize:13,color:"#629FAD"}}>Loading your family's data...</div></div></div>
-  const ti=Object.values(groceryList).reduce((s,i)=>s+i.length,0)
-  const cc=Object.keys(checkedItems).filter(k=>checkedItems[k]).length
-  const pc=Object.keys(weekPlan).length
-  const ts=(t)=>({padding:"8px 15px",border:"none",borderRadius:99,background:tab===t?"#EDEDCE":"transparent",color:tab===t?"#0C2C55":"rgba(237,237,206,0.75)",fontWeight:tab===t?700:500,fontSize:13,cursor:"pointer",transition:"all 0.15s",whiteSpace:"nowrap"})
-  return (
-    <div style={{fontFamily:"'Georgia',serif",minHeight:"100vh",background:"#EDEDCE",paddingBottom:56}}>
-      <div style={{background:"#0a2244",textAlign:"center",padding:"6px 0"}}>
-        <a href="https://familyhq.vercel.app/" style={{color:"#629FAD",fontSize:12,fontWeight:600,textDecoration:"none",letterSpacing:"0.5px"}} onMouseEnter={e=>e.target.style.color="#EDEDCE"} onMouseLeave={e=>e.target.style.color="#629FAD"}>← Shit Show HQ</a>
+
+  if (!unlocked) return <PinScreen onUnlock={unlock} />
+  if (loading) return (
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#EDEDCE" }}>
+      <div style={{ textAlign: "center" }}>
+        <div style={{ fontSize: 40, marginBottom: 12 }}>🍽</div>
+        <div style={{ fontSize: 13, color: "#629FAD" }}>Loading your family's data...</div>
       </div>
-      <div style={{background:"linear-gradient(135deg,#0C2C55 0%,#1a3f6e 100%)",padding:"20px 24px 18px",color:"white",boxShadow:"0 2px 12px rgba(12,44,85,0.4)"}}>
-        <div style={{maxWidth:680,margin:"0 auto"}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
+    </div>
+  )
+
+  const ti = Object.values(groceryList).reduce((s, i) => s + i.length, 0)
+  const cc = Object.keys(checkedItems).filter(k => checkedItems[k]).length
+  const ts = (t) => ({
+    padding: "8px 15px", border: "none", borderRadius: 99,
+    background: tab === t ? "#EDEDCE" : "transparent",
+    color: tab === t ? "#0C2C55" : "rgba(237,237,206,0.75)",
+    fontWeight: tab === t ? 700 : 500, fontSize: 13, cursor: "pointer",
+    transition: "all 0.15s", whiteSpace: "nowrap"
+  })
+
+  return (
+    <div style={{ fontFamily: "'Georgia',serif", minHeight: "100vh", background: "#EDEDCE", paddingBottom: 56 }}>
+      <div style={{ background: "#0a2244", textAlign: "center", padding: "6px 0" }}>
+        <a
+          href="https://familyhq.vercel.app/"
+          style={{ color: "#629FAD", fontSize: 12, fontWeight: 600, textDecoration: "none", letterSpacing: "0.5px" }}
+          onMouseEnter={e => e.target.style.color = "#EDEDCE"}
+          onMouseLeave={e => e.target.style.color = "#629FAD"}
+        >← Family HQ</a>
+      </div>
+
+      <div style={{ background: "linear-gradient(135deg,#0C2C55 0%,#1a3f6e 100%)", padding: "20px 24px 18px", color: "white", boxShadow: "0 2px 12px rgba(12,44,85,0.4)" }}>
+        <div style={{ maxWidth: 680, margin: "0 auto" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
             <div>
-              <div style={{fontSize:21,fontWeight:800,letterSpacing:"0.5px",color:"#EDEDCE",textTransform:"uppercase"}}>Chaos Kitchen HQ</div>
-              <div style={{fontSize:11.5,color:"#629FAD",marginTop:4,letterSpacing:"0.5px"}}>5 people · Wife: vegetarian 🌱 · You & oldest: celiac 🌾</div>
+              <div style={{ fontSize: 21, fontWeight: 800, letterSpacing: "0.5px", color: "#EDEDCE", textTransform: "uppercase" }}>Chaos Kitchen HQ</div>
+              <div style={{ fontSize: 11.5, color: "#629FAD", marginTop: 4, letterSpacing: "0.5px" }}>5 people · Wife: vegetarian 🌱 · You & oldest: celiac 🌾</div>
             </div>
-            <button onClick={()=>{sessionStorage.removeItem(SK);setUnlocked(false)}} style={{background:"rgba(98,159,173,0.15)",color:"#629FAD",border:"1px solid rgba(98,159,173,0.25)",borderRadius:8,padding:"6px 12px",fontSize:12,cursor:"pointer"}}>🔒 Lock</button>
+            <button
+              onClick={() => { sessionStorage.removeItem(SK); setUnlocked(false) }}
+              style={{ background: "rgba(98,159,173,0.15)", color: "#629FAD", border: "1px solid rgba(98,159,173,0.25)", borderRadius: 8, padding: "6px 12px", fontSize: 12, cursor: "pointer" }}
+            >🔒 Lock</button>
           </div>
-          <div style={{display:"flex",gap:2,background:"rgba(12,44,85,0.5)",borderRadius:99,padding:3,overflowX:"auto",width:"fit-content",maxWidth:"100%",border:"1px solid rgba(98,159,173,0.2)"}}>
-            {[["planner","📅 Week"],["pantry","🧺 Pantry"],["ideas","💡 Ideas"],["grocery",`🛒 Grocery${ti>0?` (${cc}/${ti})`:''}`]].map(([key,label])=>(
-              <button key={key} onClick={()=>setTab(key)} style={ts(key)}>{label}</button>
+
+          <div style={{ display: "flex", gap: 2, background: "rgba(12,44,85,0.5)", borderRadius: 99, padding: 3, overflowX: "auto", width: "fit-content", maxWidth: "100%", border: "1px solid rgba(98,159,173,0.2)" }}>
+            {[
+              ["planner", "📅 Week"],
+              ["pantry", "🧺 Pantry"],
+              ["ideas", "💡 Ideas"],
+              ["grocery", `🛒 Grocery${ti > 0 ? ` (${cc}/${ti})` : ''}`]
+            ].map(([key, label]) => (
+              <button key={key} onClick={() => setTab(key)} style={ts(key)}>{label}</button>
             ))}
           </div>
         </div>
       </div>
-      <div style={{height:3,background:"linear-gradient(90deg,#296374,#629FAD,#EDEDCE)"}}/>
-      <div style={{maxWidth:680,margin:"24px auto 0",padding:"0 16px"}}>
-        <div style={{display:tab==='planner'?'block':'none'}}><WeekPlanner weekPlan={weekPlan} setWeekPlan={setWeekPlan} pantryItems={pantryItems} onBuildAiList={buildA} onBuildQuickList={buildQ} switchToGrocery={()=>setTab('grocery')}/></div>
-        <div style={{display:tab==='pantry'?'block':'none'}}><PantryTab pantryItems={pantryItems} setPantryItems={setPantryItems}/></div>
-        <div style={{display:tab==='ideas'?'block':'none'}}><MealIdeasTab/></div>
-        <div style={{display:tab==='grocery'?'block':'none'}}>
+
+      <div style={{ height: 3, background: "linear-gradient(90deg,#296374,#629FAD,#EDEDCE)" }} />
+
+      <div style={{ maxWidth: 680, margin: "24px auto 0", padding: "0 16px" }}>
+        <div style={{ display: tab === 'planner' ? 'block' : 'none' }}>
+          <WeekPlanner
+            weekPlan={weekPlan}
+            setWeekPlan={setWeekPlan}
+            pantryItems={pantryItems}
+            customMeals={customMeals}
+            onBuildAiList={buildA}
+            onBuildQuickList={buildQ}
+            switchToGrocery={() => setTab('grocery')}
+          />
+        </div>
+        <div style={{ display: tab === 'pantry' ? 'block' : 'none' }}>
+          <PantryTab pantryItems={pantryItems} setPantryItems={setPantryItems} />
+        </div>
+        <div style={{ display: tab === 'ideas' ? 'block' : 'none' }}>
+          <MealIdeasTab />
+        </div>
+        <div style={{ display: tab === 'grocery' ? 'block' : 'none' }}>
           <GroceryList
             groceryList={groceryList}
             setGroceryList={setGroceryList}
@@ -79,7 +165,7 @@ export default function App() {
             onRegenerate={buildA}
             onBuildAiList={buildA}
             onBuildQuickList={buildQ}
-            plannedCount={pc}
+            plannedCount={Object.keys(weekPlan).length}
             groceryBuilding={groceryBuilding}
           />
         </div>
