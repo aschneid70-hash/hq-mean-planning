@@ -43,7 +43,7 @@ export default function App() {
   return (
     <div style={{fontFamily:"'Georgia',serif",minHeight:"100vh",background:"#EDEDCE",paddingBottom:56}}>
       <div style={{background:"#0a2244",textAlign:"center",padding:"6px 0"}}>
-        <a href="https://family.vercel.app/" style={{color:"#629FAD",fontSize:12,fontWeight:600,textDecoration:"none",letterSpacing:"0.5px"}} onMouseEnter={e=>e.target.style.color="#EDEDCE"} onMouseLeave={e=>e.target.style.color="#629FAD"}>← Shit Show HQ</a>
+        <a href="https://familyhq.vercel.app/" style={{color:"#629FAD",fontSize:12,fontWeight:600,textDecoration:"none",letterSpacing:"0.5px"}} onMouseEnter={e=>e.target.style.color="#EDEDCE"} onMouseLeave={e=>e.target.style.color="#629FAD"}>← Shit Show HQ</a>
       </div>
       <div style={{background:"linear-gradient(135deg,#0C2C55 0%,#1a3f6e 100%)",padding:"20px 24px 18px",color:"white",boxShadow:"0 2px 12px rgba(12,44,85,0.4)"}}>
         <div style={{maxWidth:680,margin:"0 auto"}}>
