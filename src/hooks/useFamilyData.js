@@ -1,11 +1,15 @@
 import { useState, useEffect, useRef } from 'react'
 import { doc, onSnapshot, setDoc } from 'firebase/firestore'
 import { db, FAMILY_DOC_ID } from '../firebase'
+
 const COLLECTION = 'hq-meal-planning'
+const CUSTOM_DOC = doc(db, 'hq-meal-planning', 'custom-meals')
+
 function useDebounce(fn, delay = 800) {
   const timer = useRef(null)
   return (...args) => { clearTimeout(timer.current); timer.current = setTimeout(() => fn(...args), delay) }
 }
+
 export function useFamilyData(unlocked) {
   const [weekPlan, setWeekPlanLocal] = useState({})
   const [pantryItems, setPantryItemsLocal] = useState([])
@@ -13,9 +17,12 @@ export function useFamilyData(unlocked) {
   const [checkedItems, setCheckedItemsLocal] = useState({})
   const [storeRouteInfo, setStoreRouteInfoLocal] = useState(null)
   const [grocerySource, setGrocerySourceLocal] = useState('')
+  const [customMeals, setCustomMeals] = useState([])
   const [loading, setLoading] = useState(true)
+
   const isSaving = useRef(false)
   const docRef = doc(db, COLLECTION, FAMILY_DOC_ID)
+
   const save = (patch) => {
     isSaving.current = true
     return setDoc(docRef, patch, { merge: true })
@@ -23,6 +30,8 @@ export function useFamilyData(unlocked) {
       .finally(() => { setTimeout(() => { isSaving.current = false }, 1000) })
   }
   const debouncedSave = useDebounce(save, 600)
+
+  // Main family data listener
   useEffect(() => {
     if (!unlocked) { setLoading(false); return }
     const unsub = onSnapshot(docRef, (snap) => {
@@ -41,11 +50,38 @@ export function useFamilyData(unlocked) {
     }, (err) => { console.error('Firestore error', err); setLoading(false) })
     return () => unsub()
   }, [unlocked])
-  const setWeekPlan = (u) => { setWeekPlanLocal(prev => { const next = typeof u === 'function' ? u(prev) : u; debouncedSave({ weekPlan: next }); return next }) }
+
+  // Custom meals listener (separate doc)
+  useEffect(() => {
+    if (!unlocked) return
+    const unsub = onSnapshot(CUSTOM_DOC, (snap) => {
+      if (snap.exists()) setCustomMeals(snap.data().meals || [])
+      else setCustomMeals([])
+    })
+    return () => unsub()
+  }, [unlocked])
+
+  const setWeekPlan = (u) => {
+    setWeekPlanLocal(prev => {
+      const next = typeof u === 'function' ? u(prev) : u
+      debouncedSave({ weekPlan: next })
+      return next
+    })
+  }
   const setPantryItems = (v) => { setPantryItemsLocal(v); debouncedSave({ pantryItems: v }) }
   const setGroceryList = (v) => { setGroceryListLocal(v); debouncedSave({ groceryList: v }) }
   const setCheckedItems = (v) => { setCheckedItemsLocal(v); debouncedSave({ checkedItems: v }) }
   const setStoreRouteInfo = (v) => { setStoreRouteInfoLocal(v); debouncedSave({ storeRouteInfo: v }) }
   const setGrocerySource = (v) => { setGrocerySourceLocal(v); debouncedSave({ grocerySource: v }) }
-  return { weekPlan, setWeekPlan, pantryItems, setPantryItems, groceryList, setGroceryList, checkedItems, setCheckedItems, storeRouteInfo, setStoreRouteInfo, grocerySource, setGrocerySource, loading }
+
+  return {
+    weekPlan, setWeekPlan,
+    pantryItems, setPantryItems,
+    groceryList, setGroceryList,
+    checkedItems, setCheckedItems,
+    storeRouteInfo, setStoreRouteInfo,
+    grocerySource, setGrocerySource,
+    customMeals,
+    loading
+  }
 }
