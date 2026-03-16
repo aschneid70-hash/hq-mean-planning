@@ -7,6 +7,23 @@ import { askClaudeJSON } from '../api/claude'
 
 const CUSTOM_DOC = doc(db, 'hq-meal-planning', 'custom-meals')
 
+async function generateRecipeForMeal(meal) {
+  const dietaryNote = `Family dietary needs: wife is vegetarian (no meat), 2 members have celiac disease (strictly gluten-free). ${meal.tags?.includes('vegetarian') ? 'This is a vegetarian meal.' : 'Include a vegetarian swap option for the wife.'} ${meal.tags?.includes('gluten-free') ? 'This meal is gluten-free.' : meal.tags?.includes('gluten-free-adaptable') ? 'Provide gluten-free adaptations.' : 'Note any gluten-free substitutions needed.'}`
+
+  return await askClaudeJSON(
+    `Generate a detailed recipe for "${meal.name}" for a family of 5 (2 adults, 3 kids ages 4, 2, 2).
+    ${dietaryNote}
+    Return ONLY a valid JSON object with these exact keys:
+    - prepTime (string, e.g. "15 min")
+    - cookTime (string, e.g. "25 min")
+    - servings (number)
+    - ingredients (array of strings with quantities, e.g. "2 cups rice")
+    - steps (array of strings, each a clear instruction step)
+    - notes (string — family-specific tips, substitutions for vegetarian/celiac members, kid-friendly suggestions)
+    ONLY return valid JSON, no other text.`
+  )
+}
+
 export function MealIdeasTab() {
   const [search, setSearch] = useState('')
   const [fv, setFv] = useState(false)
@@ -26,6 +43,10 @@ export function MealIdeasTab() {
   const [loadingSuggestions, setLoadingSuggestions] = useState(false)
   const [suggestionError, setSuggestionError] = useState(null)
   const [showSuggestions, setShowSuggestions] = useState(false)
+  const [includeMeat, setIncludeMeat] = useState(false)
+
+  // Track which meals are having recipes generated
+  const [generatingRecipeFor, setGeneratingRecipeFor] = useState(null)
 
   useEffect(() => {
     const unsub = onSnapshot(CUSTOM_DOC, (snap) => {
@@ -71,16 +92,26 @@ export function MealIdeasTab() {
     setSuggestions([])
     setShowSuggestions(true)
     const existingNames = allMeals.map(m => m.name).join(', ')
+
+    const meatInstruction = includeMeat
+      ? `Some meals can include meat (chicken, beef, pork, etc.) — the wife will have a vegetarian version of those nights. All meals must still have an easy vegetarian swap for the wife.`
+      : `All meals must be vegetarian or have an obvious vegetarian main that satisfies everyone.`
+
     try {
       const result = await askClaudeJSON(
-        `Generate 7 creative meal ideas for a family of 5 (2 adults, 3 kids ages 4, 2, 2). 
-        Constraints: Wife is vegetarian 🌱, 2 family members have celiac (gluten-free 🌾). 
-        All meals must be either vegetarian OR have an easy vegetarian swap. All meals should be gluten-free or easily gluten-free adaptable.
+        `Generate 7 creative meal ideas for a family of 5 (2 adults, 3 kids ages 4, 2, 2).
+        Constraints: Wife is vegetarian 🌱, 2 family members have celiac (gluten-free 🌾).
+        ${meatInstruction}
+        All meals should be gluten-free or easily gluten-free adaptable.
         Do NOT suggest any of these existing meals: ${existingNames}.
-        Return a JSON array of objects with these exact keys: name (string), description (string, 1 sentence), time (number, cook time in minutes), tags (array of strings from: "vegetarian","gluten-free","gluten-free-adaptable"), ingredients (array of ingredient strings).
+        Return a JSON array of objects with these exact keys:
+        - name (string)
+        - description (string, 1 sentence)
+        - time (number, cook time in minutes)
+        - tags (array of strings from: "vegetarian","gluten-free","gluten-free-adaptable","meat")
+        - ingredients (array of ingredient strings)
         ONLY return valid JSON array, no other text.`
       )
-      // handle both array and object responses
       const meals = Array.isArray(result) ? result : Object.values(result)
       setSuggestions(meals)
     } catch (e) {
@@ -90,11 +121,24 @@ export function MealIdeasTab() {
     }
   }
 
-  const acceptSuggestion = (meal) => {
-    const newMeal = { ...meal, custom: true }
-    const updated = [...customMeals, newMeal]
-    setDoc(CUSTOM_DOC, { meals: updated }, { merge: true })
+  // Accept suggestion: save to custom meals + generate recipe
+  const acceptSuggestion = async (meal) => {
+    // Remove from suggestions immediately for snappy UX
     setSuggestions(prev => prev.filter(m => m.name !== meal.name))
+    setGeneratingRecipeFor(meal.name)
+
+    let mealToSave = { ...meal, custom: true }
+
+    try {
+      const recipe = await generateRecipeForMeal(meal)
+      mealToSave = { ...mealToSave, recipe }
+    } catch (e) {
+      // Save without recipe if generation fails
+    }
+
+    const updated = [...customMeals, mealToSave]
+    setDoc(CUSTOM_DOC, { meals: updated }, { merge: true })
+    setGeneratingRecipeFor(null)
   }
 
   const rejectSuggestion = (mealName) => {
@@ -111,10 +155,26 @@ export function MealIdeasTab() {
 
   return (
     <div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, gap: 8, flexWrap: "wrap" }}>
         <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#0C2C55" }}>Meal Ideas</h2>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+
+          {/* Meat toggle */}
+          <div
+            onClick={() => setIncludeMeat(!includeMeat)}
+            style={{ display: "flex", alignItems: "center", gap: 7, cursor: "pointer", background: includeMeat ? "#fef0e6" : "white", border: `1.5px solid ${includeMeat ? "#e07a30" : "#a8c4cc"}`, borderRadius: 99, padding: "6px 13px" }}
+          >
+            <div style={{ width: 32, height: 18, borderRadius: 99, background: includeMeat ? "#e07a30" : "#a8c4cc", position: "relative", transition: "background 0.2s", flexShrink: 0 }}>
+              <div style={{ position: "absolute", top: 2, left: includeMeat ? 16 : 2, width: 14, height: 14, borderRadius: "50%", background: "white", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
+            </div>
+            <span style={{ fontSize: 12.5, fontWeight: 600, color: includeMeat ? "#e07a30" : "#629FAD", whiteSpace: "nowrap" }}>
+              🥩 Include Meat
+            </span>
+          </div>
+
           <button
             onClick={generateAiSuggestions}
             disabled={loadingSuggestions}
@@ -127,6 +187,7 @@ export function MealIdeasTab() {
               </>
             ) : "✨ AI Suggest"}
           </button>
+
           <button
             onClick={() => setShowForm(!showForm)}
             style={{ background: showForm ? "#f0e6e0" : "#0C2C55", color: showForm ? "#7F543D" : "white", border: "none", borderRadius: 8, padding: "8px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
@@ -136,14 +197,21 @@ export function MealIdeasTab() {
         </div>
       </div>
 
-      {/* Spinner keyframes */}
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      {/* Recipe generating toast */}
+      {generatingRecipeFor && (
+        <div style={{ background: "#e8f4f4", border: "1.5px solid #629FAD", borderRadius: 10, padding: "10px 14px", marginBottom: 14, display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "#296374", fontWeight: 600 }}>
+          <span style={{ display: "inline-block", width: 13, height: 13, border: "2px solid rgba(98,159,173,0.3)", borderTopColor: "#629FAD", borderRadius: "50%", animation: "spin 0.7s linear infinite", flexShrink: 0 }} />
+          Generating recipe for {generatingRecipeFor}...
+        </div>
+      )}
 
       {/* AI Suggestions Panel */}
       {showSuggestions && (
         <div style={{ background: "white", border: "1.5px solid #629FAD", borderRadius: 14, padding: 16, marginBottom: 20, boxShadow: "0 2px 12px rgba(12,44,85,0.10)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <div style={{ fontWeight: 700, fontSize: 15, color: "#0C2C55" }}>✨ AI Meal Suggestions</div>
+            <div style={{ fontWeight: 700, fontSize: 15, color: "#0C2C55" }}>
+              ✨ AI Meal Suggestions {includeMeat && <span style={{ fontSize: 12, color: "#e07a30", fontWeight: 600 }}>· 🥩 Meat included</span>}
+            </div>
             <button onClick={() => { setShowSuggestions(false); setSuggestions([]) }} style={{ background: "none", border: "none", color: "#629FAD", fontSize: 18, cursor: "pointer", lineHeight: 1 }}>×</button>
           </div>
 
@@ -173,12 +241,15 @@ export function MealIdeasTab() {
                   <div style={{ fontSize: 12.5, color: "#296374", marginBottom: 5 }}>{meal.description}</div>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 5 }}>
                     <span style={{ fontSize: 11.5, color: "#629FAD" }}>⏱ {meal.time} min</span>
+                    {meal.tags?.includes("meat") && <span style={{ fontSize: 11, background: "#fef0e6", color: "#e07a30", borderRadius: 99, padding: "2px 8px", fontWeight: 600 }}>🥩 Meat</span>}
                     {meal.tags?.includes("vegetarian") && <span style={{ fontSize: 11, background: "#e8f5e9", color: "#2e7d32", borderRadius: 99, padding: "2px 8px", fontWeight: 600 }}>🌱 Veg</span>}
                     {meal.tags?.includes("gluten-free") && <span style={{ fontSize: 11, background: "#fff8e1", color: "#f57f17", borderRadius: 99, padding: "2px 8px", fontWeight: 600 }}>🌾 GF</span>}
                     {meal.tags?.includes("gluten-free-adaptable") && <span style={{ fontSize: 11, background: "#fff8e1", color: "#f57f17", borderRadius: 99, padding: "2px 8px", fontWeight: 600 }}>⚡ GF Adaptable</span>}
                   </div>
                   {meal.ingredients?.length > 0 && (
-                    <div style={{ fontSize: 11.5, color: "#629FAD" }}>{meal.ingredients.slice(0, 5).join(', ')}{meal.ingredients.length > 5 ? ` +${meal.ingredients.length - 5} more` : ''}</div>
+                    <div style={{ fontSize: 11.5, color: "#629FAD" }}>
+                      {meal.ingredients.slice(0, 5).join(', ')}{meal.ingredients.length > 5 ? ` +${meal.ingredients.length - 5} more` : ''}
+                    </div>
                   )}
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 6, flexShrink: 0 }}>
